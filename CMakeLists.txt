@@ -12,6 +12,9 @@ set(INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
 file(GLOB_RECURSE c_files ${SRC_DIR}/*.c)
 file(GLOB_RECURSE cpp_files ${SRC_DIR}/*.cpp)
 
+# Stop leaking library symbols
+add_link_options(-Wl,--exclude-libs,ALL)
+
 add_library(
     web-utils
     SHARED
