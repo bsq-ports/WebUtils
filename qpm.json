@@ -6,7 +6,7 @@
     "name": "WebUtils",
     "id": "web-utils",
     "version": "0.1.0",
-    "url": "https://github.com/RedBrumbler/WebUtils",
+    "url": "https://github.com/bsq-ports/WebUtils",
     "additionalData": {
       "overrideSoName": "libweb-utils.so",
       "cmake": false
