@@ -8,7 +8,7 @@
 #include <thread>
 
 #if defined(WEBUTILS_HAS_RAPIDJSON)
-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
+#include "beatsaber-hook/shared/rapidjson.hpp"
 #endif
 
 #if defined(WEBUTILS_HAS_BSML)
