@@ -26,9 +26,9 @@
 // user agent used for requests with WebUtils
 #ifndef WEBUTILS_USER_AGENT
 #if defined(MOD_ID) && defined(VERSION)
-#define WEBUTILS_USER_AGENT MOD_ID "/" VERSION " (+https://github.com/RedBrumbler/WebUtils)"
+#define WEBUTILS_USER_AGENT MOD_ID "/" VERSION " (+https://github.com/bsq-ports/WebUtils)"
 #else
-#define WEBUTILS_USER_AGENT "WebUtils (+https://github.com/RedBrumbler/WebUtils)"
+#define WEBUTILS_USER_AGENT "WebUtils (+https://github.com/bsq-ports/WebUtils)"
 #endif
 #endif
 
