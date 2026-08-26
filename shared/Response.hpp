@@ -8,7 +8,13 @@
 #include <thread>
 
 #if defined(WEBUTILS_HAS_RAPIDJSON)
-#include "beatsaber-hook/shared/rapidjson.hpp"
+    #if __has_include("beatsaber-hook/shared/rapidjson.hpp")
+        #include "beatsaber-hook/shared/rapidjson.hpp"
+    #elif __has_include("beatsaber-hook/shared/config/rapidjson-utils.hpp")
+        #include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
+    #else
+        #error "No compatible beatsaber-hook RapidJSON header found"
+    #endif
 #endif
 
 #if defined(WEBUTILS_HAS_BSML)

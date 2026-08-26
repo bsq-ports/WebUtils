@@ -9,7 +9,7 @@
 #endif
 
 // check if json parsing is available
-#if !defined(WEBUTILS_NO_JSON) && __has_include("beatsaber-hook/shared/rapidjson.hpp")
+#if !defined(WEBUTILS_NO_JSON) && (__has_include("beatsaber-hook/shared/rapidjson.hpp") || __has_include("beatsaber-hook/shared/config/rapidjson-utils.hpp"))
 #define WEBUTILS_HAS_RAPIDJSON
 #endif
 
