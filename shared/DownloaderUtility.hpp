@@ -19,7 +19,7 @@ namespace WebUtils {
 
         /// @brief base url to request from
         std::string url;
-        /// @brief queries to append to the URL
+        /// @brief queries to append to the URL's existing query, before any fragment
         QueryMap queries;
         /// @brief headers to set on the request
         HeaderMap headers;
@@ -34,7 +34,7 @@ namespace WebUtils {
         /// @brief whether to skip escaping the url, in case you just want your url to be passed raw
         bool noEscape;
 
-        /// @brief formats the url from the set url & queries, also escape
+        /// @brief preserves URL syntax and existing escapes, and encodes appended query keys/values unless noEscape is set
         std::string fullURl() const;
 
         /// @brief gets whatever is in front of "://" in the url, empty string view otherwise

@@ -16,18 +16,20 @@ namespace WebUtils {
         return {nibbleToChar[lower], nibbleToChar[upper]};
     }
 
-    std::string escape(std::string_view url) {
-        static char forbidden[] = "@&;:<>=?\"'\\!#%+$,{}|^[]`";
-        static auto forbiddenEnd = forbidden + (sizeof(forbidden) / sizeof(char));
-        static auto isForbidden = [](char c) { return std::find(forbidden, forbiddenEnd, c) != forbiddenEnd; };
+    std::string escape(std::string_view url, bool preserveUrlSyntax = false) {
+        constexpr std::string_view reserved = ":/?#[]@!$&'()*+,;=";
+        auto isHex = [](char c) { return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); };
 
         std::string escaped;
         escaped.reserve(url.size());
 
-        for (auto c : url) {
-            if (isForbidden(c)) {
+        for (std::size_t i = 0; i < url.size(); ++i) {
+            auto c = url[i];
+            bool unreserved = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '.' || c == '_' || c == '~';
+            bool urlSyntax = preserveUrlSyntax && (reserved.find(c) != std::string_view::npos ||
+                (c == '%' && i + 2 < url.size() && isHex(url[i + 1]) && isHex(url[i + 2])));
+            if (!unreserved && !urlSyntax) {
                 escaped.push_back(u'%');
-                // we lose width here but all forbidden chars are only as big as 1 byte (char) anyway
                 auto [lc, uc] = getByteChars(static_cast<char>(c));
                 escaped.push_back(uc);
                 escaped.push_back(lc);
@@ -40,10 +42,8 @@ namespace WebUtils {
     }
 
     std::string URLOptions::fullURl() const {
-        auto protocol = this->protocol();
-        auto afterProtocol = url.substr(protocol.size() + 3);
-        if (!noEscape) afterProtocol = escape(afterProtocol);
-        if (queries.empty()) return fmt::format("{}://{}", protocol, afterProtocol);
+        auto formattedUrl = noEscape ? url : escape(url, true);
+        if (queries.empty()) return formattedUrl;
 
         std::vector<std::string> formattedQueries;
         if (noEscape) {
@@ -52,7 +52,15 @@ namespace WebUtils {
             for (auto& [key, value] : queries) formattedQueries.emplace_back(fmt::format("{}={}", escape(key), escape(value)));
         }
 
-        return fmt::format("{}://{}?{}", protocol, afterProtocol, fmt::join(formattedQueries, "&"));
+        auto fragment = formattedUrl.find('#');
+        auto queryEnd = fragment == std::string::npos ? formattedUrl.size() : fragment;
+        auto queryStart = formattedUrl.find('?');
+        std::string_view separator = "?";
+        if (queryStart < queryEnd) {
+            separator = formattedUrl[queryEnd - 1] == '?' || formattedUrl[queryEnd - 1] == '&' ? "" : "&";
+        }
+        formattedUrl.insert(queryEnd, fmt::format("{}{}", separator, fmt::join(formattedQueries, "&")));
+        return formattedUrl;
     }
 
     std::string_view URLOptions::protocol() const {
