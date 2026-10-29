@@ -121,6 +121,7 @@ namespace WebUtils {
     /// @brief string response, simply reading the data as a json string
     struct WEBUTILS_EXPORT JsonResponse : public GenericResponse<rapidjson::Document> {
         virtual bool AcceptData(std::span<uint8_t const> data) override {
+            responseData.reset();
             rapidjson::Document doc;
             doc.Parse((char*)data.data(), data.size());
             if (doc.HasParseError()) return false;
