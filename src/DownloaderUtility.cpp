@@ -136,7 +136,7 @@ namespace WebUtils {
 
         response->CurlStatus = curl_easy_perform(curl);
 
-        int httpCode = 0;
+        long httpCode = 0;
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
         response->HttpCode = httpCode;
 
@@ -226,7 +226,7 @@ namespace WebUtils {
 
         int curlStatus = curl_easy_perform(curl);
 
-        int httpCode = 0;
+        long httpCode = 0;
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
 
         VERBOSE("Post result: curl {}, http {}", curlStatus, httpCode);
