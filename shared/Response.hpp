@@ -1,6 +1,7 @@
 #pragma once
 
 #include "./_config.h"
+#include <atomic>
 #include <ranges>
 #include <string>
 #include <optional>
@@ -135,16 +136,16 @@ namespace WebUtils {
     /// @brief string response, simply reading the data as a texture
     struct WEBUTILS_EXPORT TextureResponse : public GenericResponse<UnityW<UnityEngine::Texture2D>> {
         virtual bool AcceptData(std::span<uint8_t const> data) override {
-            bool mainThreadRan = false;
+            std::atomic<bool> mainThreadRan{false};
             BSML::MainThreadScheduler::Schedule([data, &mainThreadRan, this](){
                 ArrayW<uint8_t> imageData(il2cpp_array_size_t(data.size()));
                 std::copy(data.begin(), data.end(), imageData.begin());
 
                 auto tex = BSML::Utilities::LoadTextureRaw(imageData);
                 if (tex) this->responseData = tex;
-                mainThreadRan = true;
+                mainThreadRan.store(true, std::memory_order_release);
             });
-            while(!mainThreadRan) std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            while(!mainThreadRan.load(std::memory_order_acquire)) std::this_thread::sleep_for(std::chrono::milliseconds(50));
             return responseData.has_value();
         }
     };
@@ -152,7 +153,7 @@ namespace WebUtils {
     /// @brief string response, simply reading the data as a texture into a sprite
     struct WEBUTILS_EXPORT SpriteResponse : public GenericResponse<UnityW<UnityEngine::Sprite>> {
         virtual bool AcceptData(std::span<uint8_t const> data) override {
-            bool mainThreadRan = false;
+            std::atomic<bool> mainThreadRan{false};
             BSML::MainThreadScheduler::Schedule([data, &mainThreadRan, this](){
                 ArrayW<uint8_t> imageData(il2cpp_array_size_t(data.size()));
                 std::copy(data.begin(), data.end(), imageData.begin());
@@ -162,9 +163,9 @@ namespace WebUtils {
                     auto sprite = BSML::Utilities::LoadSpriteFromTexture(tex);
                     if (sprite) this->responseData = sprite;
                 }
-                mainThreadRan = true;
+                mainThreadRan.store(true, std::memory_order_release);
             });
-            while(!mainThreadRan) std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            while(!mainThreadRan.load(std::memory_order_acquire)) std::this_thread::sleep_for(std::chrono::milliseconds(50));
             return responseData.has_value();
         }
     };
