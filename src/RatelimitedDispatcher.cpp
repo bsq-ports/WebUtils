@@ -1,4 +1,5 @@
 #include "RatelimitedDispatcher.hpp"
+#include <stdexcept>
 
 namespace WebUtils {
     bool RatelimitedDispatcher::AnyRequestsToDispatch() {
@@ -17,10 +18,17 @@ namespace WebUtils {
     }
 
     std::unique_ptr<IRequest> RatelimitedDispatcher::PopRequest() {
+        auto req = TryPopRequest();
+        if (!req) throw std::out_of_range("Cannot pop a request from an empty queue");
+        return req;
+    }
+
+    std::unique_ptr<IRequest> RatelimitedDispatcher::TryPopRequest() {
         std::unique_lock lock(_requestsMutex);
+        if (_requestsToDispatch.empty()) return nullptr;
         auto req = std::move(_requestsToDispatch.front());
         _requestsToDispatch.pop();
-        return std::move(req);
+        return req;
     }
 
     std::shared_future<void> RatelimitedDispatcher::StartDispatchIfNeeded() {
@@ -70,12 +78,9 @@ namespace WebUtils {
 
     void RatelimitedDispatcher::DispatchWorker() {
         // work through backlog
-        while (AnyRequestsToDispatch()) {
+        while (auto req = TryPopRequest()) {
             // after req complete, wait until the rate limit time has passed
             auto nextRatelimitedRequestTime = std::chrono::high_resolution_clock::now() + rateLimitTime;
-
-            // get req from queue
-            auto req = PopRequest();
 
             // retry options used if response was ratelimited or something
             std::optional<RetryOptions> retryOptions;

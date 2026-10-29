@@ -102,6 +102,9 @@ namespace WebUtils {
             /// @brief method called when all requests have finished (queue empty)
             virtual void AllFinished(std::span<std::unique_ptr<IRequest> const> finishedRequests);
         private:
+            /// @brief gets the next request under the queue lock, or null if the queue is empty
+            std::unique_ptr<IRequest> TryPopRequest();
+
             /// @brief mutex used to guard accesses to the requests queue
             std::shared_mutex _requestsMutex;
             /// @brief queue used to store the requests to be done
