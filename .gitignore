@@ -66,3 +66,8 @@ extern.cmake
 
 # QMOD Schema
 mod.json.schema
+qpm.settings.json
+toolchain.json
+*.qpkg
+dist/
+.qpm-ci-cache/

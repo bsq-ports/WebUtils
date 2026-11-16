@@ -1,0 +1,73 @@
+{
+  "$schema": "https://raw.githubusercontent.com/QuestPackageManager/QPM.Package/refs/heads/main/qpm.shared.schema.json",
+  "config": {
+    "configVersion": "2.0.0",
+    "id": "web-utils",
+    "version": "0.6.10",
+    "additionalData": {
+      "description": "Quest HTTP utilities using shared libcurl",
+      "author": "RedBrumbler",
+      "license": "",
+      "url": "https://github.com/bsq-ports/WebUtils"
+    },
+    "workspace": {
+      "scripts": {
+        "build": [
+          "cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo",
+          "cmake --build build --parallel 4",
+          "cmake -E make_directory extern/build/build",
+          "cmake -E copy build/libweb-utils.so extern/build/build/libweb-utils.so"
+        ]
+      },
+      "ndk": "^27.3.13750724",
+      "outBinaries": [
+        "build/libweb-utils.so"
+      ],
+      "cmake": false
+    },
+    "qmod": {
+      "output": "WebUtils.qmod",
+      "template": "mod.template.json",
+      "searchDirs": [
+        "build"
+      ],
+      "includeFiles": [],
+      "id": "web-utils"
+    },
+    "dependencies": {
+      "libcurl": {
+        "versionRange": "^8.23.0",
+        "qmod": "required"
+      }
+    },
+    "devDependencies": {
+      "fmt": {
+        "versionRange": "^12.2.1"
+      }
+    },
+    "dependenciesDirectory": "extern",
+    "sharedDirectory": "shared",
+    "compileOptions": {
+      "includePaths": [
+        ""
+      ]
+    }
+  },
+  "restoredDependencies": {
+    "fmt": {
+      "restoredVersion": "12.2.1",
+      "qpkgChecksum": "918012cba1ed2c388ffab91a7bf66e101d0afea8581f0aad9d971097f4217e7d",
+      "restoredBinaries": [],
+      "restoredEnv": {}
+    },
+    "libcurl": {
+      "restoredVersion": "8.23.0",
+      "qpkgChecksum": "b39f6f8468b9e51d8098c57b04c00c9a9a8c921a137052eb7ceaf1f33357a40e",
+      "restoredBinaries": [
+        "build/libcurl.so"
+      ],
+      "restoredEnv": {}
+    }
+  },
+  "env": {}
+}

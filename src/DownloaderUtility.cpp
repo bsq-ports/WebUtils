@@ -1,9 +1,10 @@
 #include "DownloaderUtility.hpp"
 #include "logging.hpp"
 
-#include "libcurl/shared/curl.h"
-#include "libcurl/shared/easy.h"
+#include "libcurl/curl.h"
+#include "libcurl/easy.h"
 #include <fmt/core.h>
+#include <fmt/ranges.h>
 #include <filesystem>
 #include <fstream>
 

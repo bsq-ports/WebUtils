@@ -1,7 +1,7 @@
 # WebUtils
 A Quest library to simplify downloading various types of content through simple method calls, allowing sync and async method calls
 
-Both GET and POST are supported, find the relevant methods in `web-utils/shared/WebUtils.hpp`
+Both GET and POST are supported, find the relevant methods in `web-utils/WebUtils.hpp`
 
 # Downloadable types
  - String as `std::string`
@@ -30,7 +30,7 @@ namespace MyMod {
 }
 ```
 
-If you're not sure how this is done, I would advise you to have a look over the `web-utils/shared/Response.hpp` header and looking at how webutils has implemented various types
+If you're not sure how this is done, I would advise you to have a look over the `web-utils/Response.hpp` header and looking at how webutils has implemented various types
 
 ## Disable certain types
 If you do not want to expose certain methods from the library to your code (for example, you're getting linker errors because the required library is not linked directly) you can do so with various compile time defines:
@@ -39,12 +39,12 @@ If you do not want to expose certain methods from the library to your code (for 
  - `WEBUTILS_NO_BSML` disables the sprite, texture and bsml downloading
 
 # Ratelimited downloads
-If you are finding yourself running into rate limits or just in general downloads failing for reasons, you can use the `web-utils/shared/RatelimitedDispatcher.hpp` header to send bulk requests in a rate limited fashion. these requests may have any expected `IResponse`, meaning you're not locked in to requesting 1 type per rate limited dispatcher.
+If you are finding yourself running into rate limits or just in general downloads failing for reasons, you can use the `web-utils/RatelimitedDispatcher.hpp` header to send bulk requests in a rate limited fashion. these requests may have any expected `IResponse`, meaning you're not locked in to requesting 1 type per rate limited dispatcher.
 
 A usage example for downloading the google home page mulitple times (weird usecase but whatever)
 
 ```c++
-#include "web-utils/shared/RatelimitedDispatcher"
+#include "web-utils/RatelimitedDispatcher"
 #include <iostream>
 int main() {
     WebUtils::RatelimitedDispatcher rlDl;
@@ -71,3 +71,29 @@ int main() {
     future.wait();
 }
 ```
+
+## Build
+
+Requires QPM v2, CMake, Ninja, and Android NDK r27d (or compatible r27).
+The commands below use `qpm2`; use `qpm` if that is your QPM v2 executable.
+
+```sh
+qpm2 restore
+qpm2 ndk resolve -d
+qpm2 build
+qpm2 qmod zip --skip_build
+qpm2 qpkg --no-build
+```
+
+WebUtils uses shared `libcurl ^8.23.0` from the QPM2 registry. Install its
+required QMOD alongside `WebUtils.qmod`; curl is installed once in `libs`.
+The ARM64 build targets Android API 24. QPM2 restores fmt 12.2.1 or compatible
+12.x headers as a development dependency. QPM builds with optimization and debug
+information using RelWithDebInfo.
+Stripped and unstripped binaries are written
+to `build/libweb-utils.so` and `build/debug/libweb-utils.so`.
+
+CI builds the QMOD and QPKG with `qpm2 qpkg --qmod`. Every run uploads a WebUtils
+artifact containing both packages, stripped and debug libraries, `build-id.txt`,
+and `SHA256SUMS`. Version tags also publish these files to a GitHub release;
+QPM Action v2 registers the QPKG using `QPM_KEY`.

@@ -39,7 +39,7 @@ target_include_directories(web-utils PRIVATE ${EXTERN_DIR}/includes/bs-cordl/inc
 target_include_directories(web-utils PRIVATE ${EXTERN_DIR}/includes)
 target_include_directories(web-utils PRIVATE ${CMAKE_CURRENT_LIST_DIR}/vcpkg_installed/arm64-android/include)
 target_include_directories(web-utils SYSTEM PRIVATE ${EXTERN_DIR}/includes/paper/shared/utfcpp/source)
-target_include_directories(web-utils SYSTEM PRIVATE ${EXTERN_DIR}/includes/fmt/fmt/include/)
+target_include_directories(web-utils SYSTEM PRIVATE ${EXTERN_DIR}/includes/fmt)
 target_include_directories(web-utils SYSTEM PRIVATE ${EXTERN_DIR}/includes/libil2cpp/il2cpp/libil2cpp)
 target_include_directories(web-utils SYSTEM PRIVATE ${EXTERN_DIR}/includes/beatsaber-hook/shared/rapidjson/include/)
 target_compile_options(web-utils PUBLIC -fdeclspec)
