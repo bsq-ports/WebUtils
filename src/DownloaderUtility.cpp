@@ -9,6 +9,35 @@
 #include <fstream>
 
 namespace WebUtils {
+    static void configureTls(CURL* curl, bool verify) {
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, verify ? 1L : 0L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, verify ? 2L : 0L);
+#ifdef __ANDROID__
+        if (!verify) return;
+        // Android names certificates using the old subject hash. OpenSSL's
+        // CAPATH lookup uses a different hash, so load the system roots as PEM.
+        static const std::string roots = [] {
+            for (const char* path : {"/apex/com.android.conscrypt/cacerts", "/system/etc/security/cacerts"}) {
+                std::string pem;
+                std::error_code error;
+                for (const auto& entry : std::filesystem::directory_iterator(path, error)) {
+                    std::ifstream file(entry.path(), std::ios::binary);
+                    if (file) {
+                        pem.append(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+                        pem.push_back('\n');
+                    }
+                }
+                if (!pem.empty()) return pem;
+            }
+            return std::string{};
+        }();
+        if (!roots.empty()) {
+            curl_blob certificates{const_cast<char*>(roots.data()), roots.size(), CURL_BLOB_NOCOPY};
+            curl_easy_setopt(curl, CURLOPT_CAINFO_BLOB, &certificates);
+        }
+#endif
+    }
+
     std::pair<char, char> getByteChars(char c) {
         static char nibbleToChar[] = "0123456789abcdef";
         auto lower = c & 0b1111;
@@ -87,15 +116,18 @@ namespace WebUtils {
 
         // if the url is for a filepath, read it from disk instead
         if (urlOptions.isFileURL()) {
-            response->CurlStatus = 0;
+            response->CurlStatus = CURLE_FILE_COULDNT_READ_FILE;
+            response->HttpCode = 404;
             std::filesystem::path filePath(urlOptions.url.substr(7));
-            if (std::filesystem::exists(filePath) && filePath.has_filename()) {
+            if (filePath.has_filename()) {
                 std::ifstream file(filePath, std::ios::ate | std::ios::binary | std::ios::in);
-                std::vector<uint8_t> data(file.tellg());
+                if (!file || file.tellg() < 0) return false;
+                std::vector<uint8_t> data(static_cast<std::size_t>(file.tellg()));
                 file.seekg(0, std::ios::beg);
-                file.read((char*)data.data(), data.size());
-                response->AcceptData(data);
-                return response->IsSuccessful() && response->DataParsedSuccessful();
+                if (!file.read((char*)data.data(), data.size())) return false;
+                response->CurlStatus = CURLE_OK;
+                response->HttpCode = 200;
+                return response->AcceptData(data) && response->IsSuccessful() && response->DataParsedSuccessful();
             } else {
                 response->HttpCode = 404;
                 return false;
@@ -111,6 +143,7 @@ namespace WebUtils {
         auto escapedUrl = urlOptions.fullURl();
 
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
+        curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2TLS);
         curl_easy_setopt(curl, CURLOPT_URL, escapedUrl.c_str());
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, urlOptions.timeOut.value_or(timeOut));
         curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, urlOptions.encoding.c_str());
@@ -140,8 +173,7 @@ namespace WebUtils {
 
         std::string userAgent = urlOptions.userAgent.value_or(this->userAgent);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, userAgent.c_str());
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, urlOptions.useSSL ? 1 : 0);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, urlOptions.useSSL ? 2 : 0);
+        configureTls(curl, urlOptions.useSSL);
 
         response->CurlStatus = curl_easy_perform(curl);
 
@@ -156,6 +188,7 @@ namespace WebUtils {
             response->AcceptHeaders(recvHeaders);
         }
 
+        curl_slist_free_all(curl_headers);
         curl_easy_cleanup(curl);
         return response->IsSuccessful() && response->DataParsedSuccessful();
     }
@@ -164,22 +197,24 @@ namespace WebUtils {
         // if the url is for a filepath, write it to disk instead
         if (urlOptions.isFileURL()) {
             std::filesystem::path filePath(urlOptions.url.substr(7));
-            if (response) response->CurlStatus = 0;
+            if (response) {
+                response->CurlStatus = CURLE_WRITE_ERROR;
+                response->HttpCode = 500;
+            }
 
             if (filePath.has_filename()) {
-                // if it exists, delete
-                if (std::filesystem::exists(filePath)) {
-                    std::filesystem::remove(filePath);
-                }
-
                 // write out
-                std::ofstream file(filePath, std::ios::binary | std::ios::out);
+                std::ofstream file(filePath, std::ios::binary | std::ios::out | std::ios::trunc);
+                if (!file) return false;
                 file.write((char*)data.data(), data.size());
+                file.close();
+                if (!file) return false;
 
                 // response will just get 0 length return
                 if (response) {
-                    response->AcceptData(std::span<uint8_t, 0>());
-                    return response->IsSuccessful() && response->DataParsedSuccessful();
+                    response->CurlStatus = CURLE_OK;
+                    response->HttpCode = 200;
+                    return response->AcceptData(std::span<uint8_t, 0>()) && response->IsSuccessful() && response->DataParsedSuccessful();
                 } else {
                     return true;
                 }
@@ -198,6 +233,7 @@ namespace WebUtils {
         auto escapedUrl = urlOptions.fullURl();
 
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
+        curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2TLS);
         curl_easy_setopt(curl, CURLOPT_URL, escapedUrl.c_str());
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, urlOptions.timeOut.value_or(timeOut));
         curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, urlOptions.encoding.c_str());
@@ -230,10 +266,10 @@ namespace WebUtils {
 
         std::string userAgent = urlOptions.userAgent.value_or(this->userAgent);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, userAgent.c_str());
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, urlOptions.useSSL ? 1 : 0);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, urlOptions.useSSL ? 2 : 0);
+        configureTls(curl, urlOptions.useSSL);
 
         int curlStatus = curl_easy_perform(curl);
+        curl_slist_free_all(curl_headers);
 
         long httpCode = 0;
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);

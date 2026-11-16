@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/QuestPackageManager/QPM.Package/refs/heads/main/qpm.schema.json",
   "configVersion": "2.0.0",
   "id": "web-utils",
-  "version": "0.6.10",
+  "version": "1.0.0",
   "additionalData": {
     "description": "Quest HTTP utilities using shared libcurl",
     "author": "RedBrumbler",

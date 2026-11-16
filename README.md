@@ -97,3 +97,16 @@ CI builds the QMOD and QPKG with `qpm2 qpkg --qmod`. Every run uploads a WebUtil
 artifact containing both packages, stripped and debug libraries, `build-id.txt`,
 and `SHA256SUMS`. Version tags also publish these files to a GitHub release;
 QPM Action v2 registers the QPKG using `QPM_KEY`.
+
+## Networking in 1.0
+
+GET and POST prefer HTTP/2 over HTTPS, with HTTP/1.1 fallback. Plain HTTP uses
+HTTP/1.1. Certificate verification uses Android's system trust roots when enabled
+with `URLOptions(..., true)`. The existing `useSSL` option controls certificate
+and hostname verification, not whether the connection uses TLS.
+
+Version 1.0 uses QPM2. Consumers with a QMOD dependency such as `^0.6.10` must
+update that dependency range to accept `1.0.0`.
+
+The [device network tests](tests/network/README.md) exercise the built library
+both standalone on Android and inside Beat Saber.
