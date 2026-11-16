@@ -107,6 +107,3 @@ and hostname verification, not whether the connection uses TLS.
 
 Version 1.0 uses QPM2. Consumers with a QMOD dependency such as `^0.6.10` must
 update that dependency range to accept `1.0.0`.
-
-The [device network tests](tests/network/README.md) exercise the built library
-both standalone on Android and inside Beat Saber.
