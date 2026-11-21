@@ -50,6 +50,9 @@
     "compileOptions": {
       "includePaths": [
         ""
+      ],
+      "cppFlags": [
+        "-fdeclspec"
       ]
     }
   },

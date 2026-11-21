@@ -46,6 +46,7 @@
   "dependenciesDirectory": "extern",
   "sharedDirectory": "shared",
   "compileOptions": {
+    "cppFlags": ["-fdeclspec"],
     "includePaths": [
       ""
     ]
